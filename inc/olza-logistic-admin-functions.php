@@ -48,12 +48,17 @@ function olza_download_countries_callback() {
         $countries_body = json_decode(wp_remote_retrieve_body($countries_response), true);
         $country_arr = array();
 
-        if (is_array($countries_body) && !empty($countries_body['data'])) {
-            $data = $countries_body['data'];
-
-            // Some APIs return countries under a nested key.
-            if (isset($data['countries'])) {
-                $data = $data['countries'];
+        $data = array();
+        if (is_array($countries_body)) {
+            if (isset($countries_body['data'])) {
+                $data = $countries_body['data'];
+                if (isset($data['countries'])) {
+                    $data = $data['countries'];
+                }
+            } elseif (isset($countries_body['countries'])) {
+                $data = $countries_body['countries'];
+            } else {
+                $data = $countries_body;
             }
 
             if (is_array($data)) {
@@ -75,6 +80,10 @@ function olza_download_countries_callback() {
             echo json_encode(array('success' => false, 'message' => $notice));
             wp_die();
         }
+        $data_dir = OLZA_LOGISTIC_PLUGIN_PATH . 'data/';
+        if (!file_exists($data_dir)) {
+            wp_mkdir_p($data_dir);
+        }
 
         $config_endpoint = olza_validate_url($api_url . '/config');
         foreach ($country_arr as $country) {
@@ -82,7 +91,7 @@ function olza_download_countries_callback() {
             $config_response = wp_remote_get($config_url, $args);
             if (!is_wp_error($config_response)) {
                 $body = wp_remote_retrieve_body($config_response);
-                file_put_contents(OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $country . '.json', $body);
+                file_put_contents($data_dir . $country . '.json', $body);
             }
         }
 
