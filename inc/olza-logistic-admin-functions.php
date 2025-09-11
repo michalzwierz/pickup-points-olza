@@ -48,26 +48,33 @@ function olza_download_countries_callback() {
         $countries_body = json_decode(wp_remote_retrieve_body($countries_response), true);
         $country_arr = array();
 
-        if (is_array($countries_body) && !empty($countries_body['data'])) {
-            $data = $countries_body['data'];
-
-            // Some APIs return countries under a nested key.
-            if (isset($data['countries'])) {
-                $data = $data['countries'];
+        $data = array();
+        if (is_array($countries_body)) {
+            if (isset($countries_body['data'])) {
+                $data = $countries_body['data'];
+                if (isset($data['countries'])) {
+                    $data = $data['countries'];
+                }
+            } elseif (isset($countries_body['countries'])) {
+                $data = $countries_body['countries'];
+            } else {
+                $data = $countries_body;
             }
 
             if (is_array($data)) {
                 foreach ($data as $key => $value) {
                     if (is_string($key) && preg_match('/^[a-z]{2}$/i', $key)) {
                         $country_arr[] = strtolower($key);
-                    } elseif (is_string($value)) {
+                    } elseif (is_string($value) && preg_match('/^[a-z]{2}$/i', $value)) {
                         $country_arr[] = strtolower($value);
-                    } elseif (is_array($value) && isset($value['code'])) {
+                    } elseif (is_array($value) && isset($value['code']) && preg_match('/^[a-z]{2}$/i', $value['code'])) {
                         $country_arr[] = strtolower($value['code']);
                     }
                 }
             }
         }
+
+        $country_arr = array_values(array_unique($country_arr));
 
         if (empty($country_arr)) {
             $notice = __('No countries were imported. The API response was empty or malformed.', 'olza-logistic-woo');
@@ -75,15 +82,29 @@ function olza_download_countries_callback() {
             echo json_encode(array('success' => false, 'message' => $notice));
             wp_die();
         }
+        $data_dir = OLZA_LOGISTIC_PLUGIN_PATH . 'data/';
+        if (!file_exists($data_dir)) {
+            wp_mkdir_p($data_dir);
+        }
 
         $config_endpoint = olza_validate_url($api_url . '/config');
+        $saved = 0;
         foreach ($country_arr as $country) {
             $config_url = add_query_arg(array('access_token' => $access_token, 'country' => $country), $config_endpoint);
             $config_response = wp_remote_get($config_url, $args);
             if (!is_wp_error($config_response)) {
                 $body = wp_remote_retrieve_body($config_response);
-                file_put_contents(OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $country . '.json', $body);
+                if (false !== file_put_contents($data_dir . $country . '.json', $body)) {
+                    $saved++;
+                }
             }
+        }
+
+        if ($saved === 0) {
+            $notice = __('Failed to save country configuration files. Please check file permissions.', 'olza-logistic-woo');
+            set_transient('olza_countries_import_notice', $notice, 30);
+            echo json_encode(array('success' => false, 'message' => $notice));
+            wp_die();
         }
 
         echo json_encode(array('success' => true, 'message' => __('Countries Added Successfully', 'olza-logistic-woo')));
