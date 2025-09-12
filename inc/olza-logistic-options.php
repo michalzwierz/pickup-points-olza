@@ -30,7 +30,7 @@ function olza_logistic_get_settings($settings)
 
         // Build country list from available data files.
         $country_options = array();
-        foreach (glob(OLZA_LOGISTIC_PLUGIN_PATH . 'data/*.json') as $file) {
+        foreach (glob(OLZA_LOGISTIC_DATA_DIR . '*.json') as $file) {
             if (preg_match('/^(\w{2})\.json$/', basename($file), $m)) {
                 $code = strtoupper($m[1]);
                 $country_options[$code] = $code;
@@ -44,7 +44,7 @@ function olza_logistic_get_settings($settings)
         $provider_options = array();
         if (!empty($countries_selected)) {
             foreach ($countries_selected as $country_code) {
-                $country_file = OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . strtolower($country_code) . '.json';
+                $country_file = OLZA_LOGISTIC_DATA_DIR . strtolower($country_code) . '.json';
                 if (file_exists($country_file)) {
                     $country_data = json_decode(file_get_contents($country_file));
                     if (!empty($country_data->data->speditions)) {

@@ -80,19 +80,36 @@ function olza_download_countries_callback() {
             echo json_encode(array('success' => false, 'message' => $notice));
             wp_die();
         }
-        $data_dir = OLZA_LOGISTIC_PLUGIN_PATH . 'data/';
+        $data_dir = OLZA_LOGISTIC_DATA_DIR;
         if (!file_exists($data_dir)) {
             wp_mkdir_p($data_dir);
         }
+        if (!is_writable($data_dir)) {
+            $notice = __('Data directory is not writable.', 'olza-logistic-woo');
+            set_transient('olza_countries_import_notice', $notice, 30);
+            echo json_encode(array('success' => false, 'message' => $notice));
+            wp_die();
+        }
 
         $config_endpoint = olza_validate_url($api_url . '/config');
+        $write_failed = false;
         foreach ($country_arr as $country) {
             $config_url = add_query_arg(array('access_token' => $access_token, 'country' => $country), $config_endpoint);
             $config_response = wp_remote_get($config_url, $args);
             if (!is_wp_error($config_response)) {
                 $body = wp_remote_retrieve_body($config_response);
-                file_put_contents($data_dir . $country . '.json', $body);
+                if (file_put_contents($data_dir . $country . '.json', $body) === false) {
+                    $write_failed = true;
+                    break;
+                }
             }
+        }
+
+        if ($write_failed) {
+            $notice = __('Failed to save country data.', 'olza-logistic-woo');
+            set_transient('olza_countries_import_notice', $notice, 30);
+            echo json_encode(array('success' => false, 'message' => $notice));
+            wp_die();
         }
 
         echo json_encode(array('success' => true, 'message' => __('Countries Added Successfully', 'olza-logistic-woo')));
@@ -109,7 +126,7 @@ function olza_get_providers_callback() {
         $html = '';
 
         foreach ($countries as $country) {
-            $file_path = OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $country . '.json';
+            $file_path = OLZA_LOGISTIC_DATA_DIR . $country . '.json';
             if (file_exists($file_path)) {
                 $country_data = json_decode(file_get_contents($file_path));
                 if (!empty($country_data->data->speditions)) {
@@ -219,7 +236,7 @@ function olza_update_pickup_points_callback() {
                     }
                     foreach ($items_by_country as $country_code => $items) {
                         $all_data = array('success' => true, 'code' => 0, 'message' => 'OK', 'data' => array('items' => $items));
-                        file_put_contents(OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $country_code . '_all.json', json_encode($all_data));
+                        file_put_contents(OLZA_LOGISTIC_DATA_DIR . $country_code . '_all.json', json_encode($all_data));
                         $message .= ' ' . strtoupper($country_code) . ' batch added\n';
                     }
                     echo json_encode(array('success' => true, 'message' => $message));
@@ -269,7 +286,7 @@ function olza_update_pickup_points_callback() {
             }
             if (!empty($all_items)) {
                 $all_data = array('success' => true, 'code' => 0, 'message' => 'OK', 'data' => array('items' => $all_items));
-                file_put_contents(OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $country . '_all.json', json_encode($all_data));
+                file_put_contents(OLZA_LOGISTIC_DATA_DIR . $country . '_all.json', json_encode($all_data));
             }
         }
 
@@ -283,7 +300,7 @@ function olza_update_pickup_points_callback() {
 
 function olza_reset_data_callback() {
     if (isset($_POST['nonce']) && wp_verify_nonce($_POST['nonce'], 'olza_load_files')) {
-        foreach (glob(OLZA_LOGISTIC_PLUGIN_PATH . 'data/*.json') as $file) {
+        foreach (glob(OLZA_LOGISTIC_DATA_DIR . '*.json') as $file) {
             @unlink($file);
         }
         echo json_encode(array('success' => true, 'message' => __('Data reset successfully', 'olza-logistic-woo')));
