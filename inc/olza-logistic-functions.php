@@ -287,7 +287,7 @@ function olza_get_pickup_points_callback()
             )
         );
 
-        $country_file_path =  OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . strtolower($country) . '.json';
+        $country_file_path =  OLZA_LOGISTIC_DATA_DIR . strtolower($country) . '.json';
 
 
         if (file_exists($country_file_path)) {
@@ -334,7 +334,7 @@ function olza_get_pickup_points_callback()
                     $spedition_list = $spedition;
                 }
 
-                $find_file_path =  OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . strtolower($country) . '_all.json';
+                $find_file_path =  OLZA_LOGISTIC_DATA_DIR . strtolower($country) . '_all.json';
 
                 $find_response = file_get_contents($find_file_path);
 

@@ -20,6 +20,10 @@ define('OLZA_LOGISTIC_PLUGIN_VERSION', '1.1.0');
 define('OLZA_LOGISTIC_PLUGIN_DIR', plugin_dir_url(__DIR__));
 define('OLZA_LOGISTIC_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
+// Directory for storing downloaded data files.
+$olza_uploads = wp_upload_dir();
+define('OLZA_LOGISTIC_DATA_DIR', trailingslashit($olza_uploads['basedir']) . 'olza-logistic/');
+
 /*
  * Function to load plugin textdomain
  */
