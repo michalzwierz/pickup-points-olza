@@ -319,15 +319,11 @@ function olza_get_pickup_points_callback()
 
                 if ($spedition == 'all') {
                     $spedition_list = implode(',', $spedition_arr);
-
-                    $sped_file_name = strtolower($country) . '_' . 'all';
-				
                 } else {
                     $spedition_list = $spedition;
-                    $sped_file_name = strtolower($country) . '_' . $spedition;
                 }
 
-                $find_file_path =  OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $sped_file_name . '.json';
+                $find_file_path =  OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . strtolower($country) . '_all.json';
 
                 $find_response = file_get_contents($find_file_path);
 
@@ -355,6 +351,12 @@ function olza_get_pickup_points_callback()
                 } else {
 
                     $find_data_arr = json_decode($find_response)->data;
+
+                    if ($spedition != 'all' && !empty($find_data_arr->items)) {
+                        $find_data_arr->items = array_values(array_filter($find_data_arr->items, function ($pickup_obj) use ($spedition) {
+                            return isset($pickup_obj->spedition) && $pickup_obj->spedition === $spedition;
+                        }));
+                    }
 
 
 
