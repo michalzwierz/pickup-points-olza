@@ -148,10 +148,56 @@ function olza_update_pickup_points_callback() {
         $message = __('Files Not Updated', 'olza-logistic-woo');
 
         $find_endpoint = olza_validate_url($api_url . '/find');
+        $batch_endpoint = olza_validate_url($api_url . '/batch/full-export');
         $args = array(
             'timeout' => 300,
             'headers' => array('Content-Type' => 'application/json')
         );
+
+        $batch_used = false;
+        if (!empty($olza_options['batch_full_export'])) {
+            $spedition_codes = array();
+            foreach ($providers as $prov) {
+                list(, $sped_value) = array_pad(explode(':', $prov), 2, '');
+                if (!empty($sped_value)) {
+                    $spedition_codes[] = $sped_value;
+                }
+            }
+            $batch_url = add_query_arg(array(
+                'access_token' => $access_token,
+                'country' => implode(',', $countries),
+                'spedition' => implode(',', array_unique($spedition_codes)),
+            ), $batch_endpoint);
+            $batch_response = wp_remote_get($batch_url, $args);
+            if (!is_wp_error($batch_response)) {
+                $batch_data = wp_remote_retrieve_body($batch_response);
+                $decoded_batch = json_decode($batch_data);
+                if (!empty($decoded_batch->data->items)) {
+                    $items_by_country = array();
+                    foreach ($decoded_batch->data->items as $item) {
+                        $item_country = '';
+                        if (!empty($item->address->country)) {
+                            $item_country = strtolower($item->address->country);
+                        } elseif (!empty($item->country)) {
+                            $item_country = strtolower($item->country);
+                        }
+                        if (!empty($item_country)) {
+                            if (!isset($items_by_country[$item_country])) {
+                                $items_by_country[$item_country] = array();
+                            }
+                            $items_by_country[$item_country][] = $item;
+                        }
+                    }
+                    foreach ($items_by_country as $country_code => $items) {
+                        $all_data = array('success' => true, 'code' => 0, 'message' => 'OK', 'data' => array('items' => $items));
+                        file_put_contents(OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $country_code . '_all.json', json_encode($all_data));
+                        $message .= ' ' . strtoupper($country_code) . ' batch added\n';
+                    }
+                    echo json_encode(array('success' => true, 'message' => $message));
+                    wp_die();
+                }
+            }
+        }
 
         foreach ($countries as $country) {
             $all_items = array();
@@ -164,8 +210,6 @@ function olza_update_pickup_points_callback() {
                 $find_response = wp_remote_get($find_url, $args);
                 if (!is_wp_error($find_response)) {
                     $find_data = wp_remote_retrieve_body($find_response);
-                    $file_path = OLZA_LOGISTIC_PLUGIN_PATH . 'data/' . $country . '_' . $sped_value . '.json';
-                    file_put_contents($file_path, $find_data);
                     $decoded = json_decode($find_data);
                     if (!empty($decoded->data->items)) {
                         $all_items = array_merge($all_items, $decoded->data->items);

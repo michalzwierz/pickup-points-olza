@@ -115,6 +115,12 @@ function olza_logistic_get_settings($settings)
                 'options' => $provider_options,
             ),
             array(
+                'title' => __('Use batch full export', 'olza-logistic-woo'),
+                'type'  => 'checkbox',
+                'desc'  => __('Attempt to load pickup points using a single batch request.', 'olza-logistic-woo'),
+                'id'    => 'olza_options[batch_full_export]',
+            ),
+            array(
                 'name' => __('Update pick-up points', 'olza-logistic-woo'),
                 'type' => 'button',
                 'desc' => __('Download pickup point data for selected providers.', 'olza-logistic-woo'),
