@@ -101,40 +101,41 @@ add_action('wp_enqueue_scripts', 'aloa_marketing_adding_scripts');
 
 function aloa_marketing_adding_scripts()
 {
-	global $olza_options;
-	$olza_options = get_option('olza_options');
+        global $olza_options;
+        $olza_options = get_option('olza_options');
 
-	$mapbox_api = isset($olza_options['mapbox_api']) && !empty($olza_options['mapbox_api']) ? $olza_options['mapbox_api'] : '';
+        $api_url       = isset($olza_options['api_url']) ? $olza_options['api_url'] : '';
+        $access_token  = isset($olza_options['access_token']) ? $olza_options['access_token'] : '';
+        $fields        = isset($olza_options['fields']) ? array_map('trim', explode(',', $olza_options['fields'])) : array();
+        $services      = isset($olza_options['services']) ? array_map('trim', explode(',', $olza_options['services'])) : array();
+        $payments      = isset($olza_options['payments']) ? array_map('trim', explode(',', $olza_options['payments'])) : array();
+        $types         = isset($olza_options['types']) ? array_map('trim', explode(',', $olza_options['types'])) : array();
+        $bounds        = isset($olza_options['bounds']) ? $olza_options['bounds'] : '';
 
-	if (class_exists('WooCommerce') && (is_checkout() || is_cart())) {
+        if (class_exists('WooCommerce') && (is_checkout() || is_cart())) {
+                $widget_url  = OLZA_LOGISTIC_PLUGIN_URL . 'node_modules/develart-olzalogistic-pickup-points-widget/dist/';
+                $widget_path = OLZA_LOGISTIC_PLUGIN_PATH . 'node_modules/develart-olzalogistic-pickup-points-widget/dist/';
 
-		wp_enqueue_style('mapbox', OLZA_LOGISTIC_PLUGIN_URL . 'assets/css/mapbox.css');
-		wp_enqueue_script('mapbox', OLZA_LOGISTIC_PLUGIN_URL . 'assets/js/mapbox.js', array('jquery'), OLZA_LOGISTIC_PLUGIN_VERSION, false);
+                wp_enqueue_script('olza-widget', $widget_url . 'olza-widget.js', array(), OLZA_LOGISTIC_PLUGIN_VERSION, true);
 
-		wp_enqueue_style('mapbox-geocoder', OLZA_LOGISTIC_PLUGIN_URL . 'assets/css/mapbox-geocoder.css');
-		wp_enqueue_script('mapbox-geocoder', OLZA_LOGISTIC_PLUGIN_URL . 'assets/js/mapbox-geocoder.js', array('jquery'), OLZA_LOGISTIC_PLUGIN_VERSION, false);
+                foreach (glob($widget_path . '*.css') as $css_file) {
+                        $handle = 'olza-widget-' . basename($css_file, '.css');
+                        wp_enqueue_style($handle, $widget_url . basename($css_file), array(), OLZA_LOGISTIC_PLUGIN_VERSION);
+                }
+        }
 
-		wp_enqueue_style('olza-confirm', OLZA_LOGISTIC_PLUGIN_URL . 'assets/css/olza-confirm.css');
-		wp_enqueue_script('olza-confirm', OLZA_LOGISTIC_PLUGIN_URL . 'assets/js/olza-confirm.js', array('jquery'), OLZA_LOGISTIC_PLUGIN_VERSION, false);
-	}
+        wp_enqueue_style('olza-logistic', OLZA_LOGISTIC_PLUGIN_URL . 'assets/css/olza-logistic.css');
+        wp_enqueue_script('olza-logistic', OLZA_LOGISTIC_PLUGIN_URL . 'assets/js/olza-logistic.js', array('jquery', 'olza-widget'), OLZA_LOGISTIC_PLUGIN_VERSION, true);
 
-	wp_enqueue_style('olza-logistic', OLZA_LOGISTIC_PLUGIN_URL . 'assets/css/olza-logistic.css');
-	wp_enqueue_script('olza-logistic', OLZA_LOGISTIC_PLUGIN_URL . 'assets/js/olza-logistic.js', array('jquery'), OLZA_LOGISTIC_PLUGIN_VERSION, true);
-
-
-	wp_localize_script('olza-logistic', 'olza_global', array(
-		'ajax_url' => admin_url('admin-ajax.php'),
-		'nonce' => wp_create_nonce('olza_checkout'),
-		'mapbox_token' => $mapbox_api,
-		'geocode_placeholder' => __('Search Pick Up', 'olza-logistic-woo'),
-		'choose_another' => __('Search Pick Up', 'olza-logistic-woo'),
-		'r_u_sure' => __('Are You Sure', 'olza-logistic-woo'),
-		'pic_selection' => __('Your pickup selection is : ', 'olza-logistic-woo'),
-		'goto_checkout' => __('Go to checkout', 'olza-logistic-woo'),
-		'chose_ship_method' => __('Please choose pickup point shipping method to show pickup point', 'olza-logistic-woo'),
-		'confirm' => __('Confirm', 'olza-logistic-woo'),
-		'cancel' => __('Cancel', 'olza-logistic-woo'),
-	));
+        wp_localize_script('olza-logistic', 'olza_global', array(
+                'api_url'      => $api_url,
+                'access_token' => $access_token,
+                'fields'       => $fields,
+                'services'     => $services,
+                'payments'     => $payments,
+                'types'        => $types,
+                'bounds'       => $bounds,
+        ));
 }
 
 
