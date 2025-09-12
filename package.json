@@ -1,0 +1,16 @@
+{
+  "name": "pickup-points-olza",
+  "version": "1.0.0",
+  "description": "This plugin adds pickup point shipping methods to WooCommerce. Administrators can configure API credentials, a default country and logistic provider, and sync pickup point data.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "develart-olzalogistic-pickup-points-widget": "^1.8.19"
+  }
+}
