@@ -145,6 +145,18 @@ function olza_update_pickup_points_callback() {
 
         $countries = isset($_POST['countries']) && is_array($_POST['countries']) ? array_map('strtolower', $_POST['countries']) : array();
         $providers = isset($_POST['providers']) && is_array($_POST['providers']) ? $_POST['providers'] : array();
+
+        // optional filters
+        $fields   = isset($_POST['fields'])   ? sanitize_text_field($_POST['fields'])   : (isset($olza_options['fields'])   ? $olza_options['fields']   : 'name,address,location');
+        $services = isset($_POST['services']) ? sanitize_text_field($_POST['services']) : (isset($olza_options['services']) ? $olza_options['services'] : '');
+        $payments = isset($_POST['payments']) ? sanitize_text_field($_POST['payments']) : (isset($olza_options['payments']) ? $olza_options['payments'] : '');
+        $types    = isset($_POST['types'])    ? sanitize_text_field($_POST['types'])    : (isset($olza_options['types'])    ? $olza_options['types']    : '');
+        $bounds   = isset($_POST['bounds'])   ? sanitize_text_field($_POST['bounds'])   : (isset($olza_options['bounds'])   ? $olza_options['bounds']   : '');
+
+        if (empty($fields)) {
+            $fields = 'name,address,location';
+        }
+
         $message = __('Files Not Updated', 'olza-logistic-woo');
 
         $find_endpoint = olza_validate_url($api_url . '/find');
@@ -163,11 +175,28 @@ function olza_update_pickup_points_callback() {
                     $spedition_codes[] = $sped_value;
                 }
             }
-            $batch_url = add_query_arg(array(
+            $batch_args = array(
                 'access_token' => $access_token,
                 'country' => implode(',', $countries),
                 'spedition' => implode(',', array_unique($spedition_codes)),
-            ), $batch_endpoint);
+            );
+            if (!empty($fields)) {
+                $batch_args['fields'] = $fields;
+            }
+            if (!empty($services)) {
+                $batch_args['services'] = $services;
+            }
+            if (!empty($payments)) {
+                $batch_args['payments'] = $payments;
+            }
+            if (!empty($types)) {
+                $batch_args['types'] = $types;
+            }
+            if (!empty($bounds)) {
+                $batch_args['bounds'] = $bounds;
+            }
+
+            $batch_url = add_query_arg($batch_args, $batch_endpoint);
             $batch_response = wp_remote_get($batch_url, $args);
             if (!is_wp_error($batch_response)) {
                 $batch_data = wp_remote_retrieve_body($batch_response);
@@ -206,7 +235,28 @@ function olza_update_pickup_points_callback() {
                 if ($prov_country !== $country) {
                     continue;
                 }
-                $find_url = add_query_arg(array('access_token' => $access_token, 'country' => $country, 'spedition' => $sped_value), $find_endpoint);
+                $find_args = array(
+                    'access_token' => $access_token,
+                    'country' => $country,
+                    'spedition' => $sped_value,
+                );
+                if (!empty($fields)) {
+                    $find_args['fields'] = $fields;
+                }
+                if (!empty($services)) {
+                    $find_args['services'] = $services;
+                }
+                if (!empty($payments)) {
+                    $find_args['payments'] = $payments;
+                }
+                if (!empty($types)) {
+                    $find_args['types'] = $types;
+                }
+                if (!empty($bounds)) {
+                    $find_args['bounds'] = $bounds;
+                }
+
+                $find_url = add_query_arg($find_args, $find_endpoint);
                 $find_response = wp_remote_get($find_url, $args);
                 if (!is_wp_error($find_response)) {
                     $find_data = wp_remote_retrieve_body($find_response);

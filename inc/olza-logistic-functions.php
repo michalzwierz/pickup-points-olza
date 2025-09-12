@@ -231,6 +231,17 @@ function olza_get_pickup_points_callback()
         $api_url = isset($olza_options['api_url']) && !empty($olza_options['api_url']) ? $olza_options['api_url'] : '';
         $access_token = isset($olza_options['access_token']) && !empty($olza_options['access_token']) ? $olza_options['access_token'] : '';
 
+        // optional filters
+        $fields   = isset($_POST['fields'])   ? sanitize_text_field($_POST['fields'])   : (isset($olza_options['fields'])   ? $olza_options['fields']   : 'name,address,location');
+        $services = isset($_POST['services']) ? sanitize_text_field($_POST['services']) : (isset($olza_options['services']) ? $olza_options['services'] : '');
+        $payments = isset($_POST['payments']) ? sanitize_text_field($_POST['payments']) : (isset($olza_options['payments']) ? $olza_options['payments'] : '');
+        $types    = isset($_POST['types'])    ? sanitize_text_field($_POST['types'])    : (isset($olza_options['types'])    ? $olza_options['types']    : '');
+        $bounds   = isset($_POST['bounds'])   ? sanitize_text_field($_POST['bounds'])   : (isset($olza_options['bounds'])   ? $olza_options['bounds']   : '');
+
+        if (empty($fields)) {
+            $fields = 'name,address,location';
+        }
+
         // Determine provider/spedition
         $selected_providers = array();
         if (!empty($olza_options['providers']) && is_array($olza_options['providers'])) {
@@ -399,6 +410,21 @@ function olza_get_pickup_points_callback()
                             'country' => $country,
                             'spedition' => $spedition_list,
                         );
+                        if (!empty($fields)) {
+                            $nearby_t_args['fields'] = $fields;
+                        }
+                        if (!empty($services)) {
+                            $nearby_t_args['services'] = $services;
+                        }
+                        if (!empty($payments)) {
+                            $nearby_t_args['payments'] = $payments;
+                        }
+                        if (!empty($types)) {
+                            $nearby_t_args['types'] = $types;
+                        }
+                        if (!empty($bounds)) {
+                            $nearby_t_args['bounds'] = $bounds;
+                        }
 
                         if ($lat != 0 && $lng != 0) {
                             $nearby_t_args['location'] = $lat . ',' . $lng;
