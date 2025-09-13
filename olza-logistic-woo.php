@@ -117,8 +117,8 @@ function aloa_marketing_adding_scripts()
         $bounds        = isset($olza_options['bounds']) ? $olza_options['bounds'] : '';
 
         if (class_exists('WooCommerce') && (is_checkout() || is_cart())) {
-                $widget_url  = OLZA_LOGISTIC_PLUGIN_URL . 'node_modules/develart-olzalogistic-pickup-points-widget/dist/';
-                $widget_path = OLZA_LOGISTIC_PLUGIN_PATH . 'node_modules/develart-olzalogistic-pickup-points-widget/dist/';
+                $widget_url  = OLZA_LOGISTIC_PLUGIN_URL . 'assets/vendor/olza-widget/';
+                $widget_path = OLZA_LOGISTIC_PLUGIN_PATH . 'assets/vendor/olza-widget/';
 
                 wp_enqueue_script('olza-widget', $widget_url . 'olza-widget.js', array(), OLZA_LOGISTIC_PLUGIN_VERSION, true);
 
